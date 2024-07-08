@@ -74,7 +74,7 @@ IGNORED_FILENAMES_IN_AYON = {
 }
 IGNORED_HOSTS_IN_AYON = {
     "flame",
-    "harmony",
+    
 }
 
 
