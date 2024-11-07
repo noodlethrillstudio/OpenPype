@@ -270,14 +270,6 @@ class ExtractReviewSlate(publish.Extractor):
             ]
             slate_subprocess_cmd = " ".join(slate_args)
 
-            if os.getenv("SHELL") in ("/bin/bash", "/bin/sh"):
-                # Escape parentheses for bash
-                slate_subprocess_cmd = (
-                    slate_subprocess_cmd
-                    .replace("(", "\\(")
-                    .replace(")", "\\)")
-                )
-
             # run slate generation subprocess
             self.log.debug(
                 "Slate Executing: {}".format(slate_subprocess_cmd)
