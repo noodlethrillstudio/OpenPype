@@ -35,59 +35,7 @@ class LaunchFolder(BaseAction):
 
         return valid
 
-    """def launch(self, session, entities, event):
-
-            '''Callback method for the custom action.
-            '''
-
-            if 'values' not in event['data']:
-                return
-
-            entity_id = entities[0]['id']
-            values = event['data'].get('values',{})
-
-            project_entity = self.get_project_from_entity(entities)
-
-            project_name = project_entity["full_name"]
-            project_code = project_entity["name"]
-
-            anatomy = Anatomy(project_name)
-
-            work_keys = ["work", "folder"]
-            work_template = anatomy.templates
-            for key in work_keys:
-                work_template = work_template[key]
-
-            publish_keys = ["publish", "folder"]
-            publish_template = anatomy.templates
-            for key in publish_keys:
-                publish_template = publish_template[key]
-
-            project_data = {
-                "project": {
-                    "name": project_name,
-                    "code": project_code
-                }
-            }
-
-            entity_type = get_entity_type()
-
-            path = get_entity_path()
-
-            if entity_type == "file":
-                open_file(path)
-
-            elif entity_type == "folder":
-                open_folder(path)
-
-            elif entity_type == None:
-                log.debug("No entity type found")
-                return {'success': False}
-
-            return  {
-            'success': True,
-                    }"""
-
+    
     def launch(self, session, entities, event):
         entity = entities[0]
         is_asset = False
