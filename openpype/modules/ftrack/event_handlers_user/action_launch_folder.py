@@ -158,12 +158,6 @@ class LaunchFolder(BaseAction):
             #asset_type = entity["asset"]["type"]["name"]
 
             path = publish_path
-            # = os.path.join(
-            #     publish_path,
-            #     asset_type,
-            #     str(entity["asset"]["name"]),
-            #     )
-
 
 
         elif is_task:
@@ -249,15 +243,7 @@ class LaunchFolder(BaseAction):
         filled_template = anatomy.format_all(data)
         for key in work_keys:
             filled_template = filled_template[key]
-
-        #if filled_template.solved:
-            #return os.path.normpath(filled_template)
-
-        # self.log.warning(
-        #     "Template \"{}\" was not fully filled \"{}\"".format(
-        #         filled_template.template, filled_template
-        #     )
-        # )
+            
         return os.path.normpath(filled_template.split("work")[0])
 
     def check_platform(self):
