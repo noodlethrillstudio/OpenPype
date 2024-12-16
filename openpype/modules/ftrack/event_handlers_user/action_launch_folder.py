@@ -20,7 +20,7 @@ class LaunchFolder(BaseAction):
     description = 'launches associated drive folder'
     icon = statics_icon("ftrack", "action_icons", "sunandmoon.png")
 
-    
+
 
     def discover(self, session, entities, event):
 
@@ -31,12 +31,12 @@ class LaunchFolder(BaseAction):
         # Check for multiple selection.
         if len(entities) > 1:
             valid = False
-    
+
 
         return valid
 
     """def launch(self, session, entities, event):
-    
+
             '''Callback method for the custom action.
             '''
 
@@ -69,16 +69,16 @@ class LaunchFolder(BaseAction):
                     "code": project_code
                 }
             }
-            
+
             entity_type = get_entity_type()
-            
+
             path = get_entity_path()
-                 
+
             if entity_type == "file":
                 open_file(path)
 
             elif entity_type == "folder":
-                open_folder(path) 
+                open_folder(path)
 
             elif entity_type == None:
                 log.debug("No entity type found")
@@ -87,26 +87,26 @@ class LaunchFolder(BaseAction):
             return  {
             'success': True,
                     }"""
-    
+
     def launch(self, session, entities, event):
         entity = entities[0]
         is_asset = False
         is_task = False
 
         if entities[0].entity_type == "AssetVersion":
-            
+
             self.log.info("Is AssetVersion")
             is_asset = True
 
         elif entities[0].entity_type == "Task":
-            
+
             self.log.info("Is Task")
             is_task = True
         elif entities[0].entity_type != "AssetVersion" and entities[0].entity_type != "Task":
             self.log.info("Is Folder")
-            
-            
-        
+
+
+
         project_entity = self.get_project_from_entity(entities[0])
 
         project_name = project_entity["full_name"]
@@ -148,11 +148,11 @@ class LaunchFolder(BaseAction):
         hierarchy_names = []
         if is_asset:
             parent_entity= entity["task"]["parent"]
-        elif is_task: 
+        elif is_task:
             parent_entity = entity["parent"]
         elif not is_asset and not is_task:
             parent_entity = entity
-        
+
         parent_data = copy.deepcopy(project_data)
 
         while parent_entity.get("parent"):
@@ -161,14 +161,14 @@ class LaunchFolder(BaseAction):
             if parent_entity.entity_type.lower() == "project":
                 break
             hierarchy_names.append(parent_entity["name"])
-    
+
         hierarchy = "/".join(reversed(hierarchy_names))
         self.log.info(f"Hierarchy: {hierarchy}")
-        
+
         if not is_asset:
             parent_entity = entity["parent"]
-                 
-        if is_task:            
+
+        if is_task:
             parent_name = hierarchy_names[0]
             parent_data.update({
                 #here, asset needs to be the parent of the task you've selected.
@@ -196,7 +196,7 @@ class LaunchFolder(BaseAction):
                 "hierarchy": hierarchy,
                 "parent": hierarchy_names[-1] if hierarchy_names else project_name
             })
-        
+
         if is_asset:
             task_type_id = entity["task"]["type_id"]
             task_type_name = task_type_names_by_id[task_type_id]
@@ -204,18 +204,18 @@ class LaunchFolder(BaseAction):
             task_data["task"] = {
                 "name": entity["task"]["name"],
                 "type": task_type_name,
-                }  
+                }
             self.log.info(f"Task data: {task_data}")
             publish_path = self.compute_template(anatomy, task_data, publish_keys)
             #asset_type = entity["asset"]["type"]["name"]
 
             path = publish_path
             # = os.path.join(
-            #     publish_path, 
-            #     asset_type,     
-            #     str(entity["asset"]["name"]), 
+            #     publish_path,
+            #     asset_type,
+            #     str(entity["asset"]["name"]),
             #     )
-            
+
 
 
         elif is_task:
@@ -223,7 +223,7 @@ class LaunchFolder(BaseAction):
             task_type_id = entity["type_id"]
             task_type_name = task_type_names_by_id[task_type_id]
             task_data = copy.deepcopy(parent_data)
-            
+
             task_data["task"] = {
                 "name": entity["name"],
                 "type": task_type_name
@@ -239,7 +239,7 @@ class LaunchFolder(BaseAction):
 
         self.log.info("Opening path:")
 
-        
+
         self.log.info(path)
         if not os.path.exists(path):
             self.log.info("path does not exist")
@@ -296,12 +296,12 @@ class LaunchFolder(BaseAction):
             )
         )
         return os.path.normpath(filled_template.split("{")[0])
-    
+
     def compute_template_folder(self, anatomy, data, work_keys):
         filled_template = anatomy.format_all(data)
         for key in work_keys:
             filled_template = filled_template[key]
-        
+
         #if filled_template.solved:
             #return os.path.normpath(filled_template)
 
@@ -330,7 +330,7 @@ class LaunchFolder(BaseAction):
                 log.debug("File location does not exist")
                 return {'success': False,
                         'message': "File path connot be found, ensure file sharing drive is connected"}
-            
+
         elif self.check_platform() == "darwin":
             if os.path.exists(path):
                 subprocess.Popen('open','-R', path)
@@ -350,10 +350,10 @@ class LaunchFolder(BaseAction):
                 log.debug("File location does not exist")
                 return {'success': False,
                         'message': "File path connot be found, ensure file sharing drive is connected"}
-            
+
         elif self.check_platform() == "darwin":
             if os.path.exists(path):
-                subprocess.Popen('open','-R', path)
+                subprocess.Popen(['open','-R', path])
                 return
             elif not os.path.exists(path):
                 log.debug("File location does not exist")
