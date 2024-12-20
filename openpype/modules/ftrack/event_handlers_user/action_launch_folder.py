@@ -112,6 +112,7 @@ class LaunchFolder(BaseAction):
         hierarchy = "/".join(reversed(hierarchy_names))
         self.log.info(f"Hierarchy: {hierarchy}")
 
+        editorial_override = False
         if is_task:
             if project_name == "Duck_and_Frog"  and "editorial" in hierarchy_names:
                 editorial_template = self.get_editorial_folders_DF(entity)
@@ -119,7 +120,7 @@ class LaunchFolder(BaseAction):
             elif project_name == "Maddie_and_Triggs" and "editorial" in hierarchy_names:
                 editorial_template = self.get_editorial_folders_MT(entity)
                 if editorial_template: editorial_override = True
-            
+
 
         if not is_asset:
             parent_entity = entity["parent"]
@@ -165,7 +166,7 @@ class LaunchFolder(BaseAction):
             publish_path = self.compute_template(anatomy, task_data, publish_keys)
 
             path = publish_path
-          
+
         elif is_task and editorial_override == False:
             self.log.info("Is task, work path used")
             task_type_id = entity["type_id"]
@@ -179,8 +180,8 @@ class LaunchFolder(BaseAction):
             self.log.info(f"Task data: {task_data}")
             work_path = self.compute_template(anatomy, task_data, work_keys)
             path = work_path
-        
-         
+
+
         elif is_task and editorial_override == True:
             self.log.info("Is task, work path used")
             task_type_id = entity["type_id"]
@@ -193,8 +194,10 @@ class LaunchFolder(BaseAction):
                 }
             self.log.info(f"Task data: {task_data}")
             work_path = self.compute_template_folder(anatomy, task_data, work_keys)
+            self.log.info(f"Edit template: {editorial_template}")
             for key in editorial_template:
-                work_path = work_path + "/" + editorial_template[key]
+                work_path = os.path.join( work_path, editorial_template[key])
+                path = work_path
 
         elif not is_asset and not is_task:
             folder_path = self.compute_template_folder(anatomy, project_data, work_keys)
@@ -281,7 +284,7 @@ class LaunchFolder(BaseAction):
                 "subfolder": "edit_workfiles"
             }
         return ed_folder_template
-    
+
     def get_editorial_folders_MT(self, entity):
         ed_folder_template = {}
         if entity["name"] == "Story_Script":
