@@ -35,59 +35,6 @@ class LaunchFolder(BaseAction):
 
         return valid
 
-    """def launch(self, session, entities, event):
-
-            '''Callback method for the custom action.
-            '''
-
-            if 'values' not in event['data']:
-                return
-
-            entity_id = entities[0]['id']
-            values = event['data'].get('values',{})
-
-            project_entity = self.get_project_from_entity(entities)
-
-            project_name = project_entity["full_name"]
-            project_code = project_entity["name"]
-
-            anatomy = Anatomy(project_name)
-
-            work_keys = ["work", "folder"]
-            work_template = anatomy.templates
-            for key in work_keys:
-                work_template = work_template[key]
-
-            publish_keys = ["publish", "folder"]
-            publish_template = anatomy.templates
-            for key in publish_keys:
-                publish_template = publish_template[key]
-
-            project_data = {
-                "project": {
-                    "name": project_name,
-                    "code": project_code
-                }
-            }
-
-            entity_type = get_entity_type()
-
-            path = get_entity_path()
-
-            if entity_type == "file":
-                open_file(path)
-
-            elif entity_type == "folder":
-                open_folder(path)
-
-            elif entity_type == None:
-                log.debug("No entity type found")
-                return {'success': False}
-
-            return  {
-            'success': True,
-                    }"""
-
     def launch(self, session, entities, event):
         entity = entities[0]
         is_asset = False
@@ -165,6 +112,16 @@ class LaunchFolder(BaseAction):
         hierarchy = "/".join(reversed(hierarchy_names))
         self.log.info(f"Hierarchy: {hierarchy}")
 
+        editorial_override = False
+        if is_task:
+            if project_name == "Duck_and_Frog"  and "editorial" in hierarchy_names:
+                editorial_template = self.get_editorial_folders_DF(entity)
+                if editorial_template: editorial_override = True
+            elif project_name == "Maddie_and_Triggs" and "editorial" in hierarchy_names:
+                editorial_template = self.get_editorial_folders_MT(entity)
+                if editorial_template: editorial_override = True
+
+
         if not is_asset:
             parent_entity = entity["parent"]
 
@@ -207,18 +164,10 @@ class LaunchFolder(BaseAction):
                 }
             self.log.info(f"Task data: {task_data}")
             publish_path = self.compute_template(anatomy, task_data, publish_keys)
-            #asset_type = entity["asset"]["type"]["name"]
 
             path = publish_path
-            # = os.path.join(
-            #     publish_path,
-            #     asset_type,
-            #     str(entity["asset"]["name"]),
-            #     )
 
-
-
-        elif is_task:
+        elif is_task and editorial_override == False:
             self.log.info("Is task, work path used")
             task_type_id = entity["type_id"]
             task_type_name = task_type_names_by_id[task_type_id]
@@ -231,6 +180,24 @@ class LaunchFolder(BaseAction):
             self.log.info(f"Task data: {task_data}")
             work_path = self.compute_template(anatomy, task_data, work_keys)
             path = work_path
+
+
+        elif is_task and editorial_override == True:
+            self.log.info("Is task, work path used")
+            task_type_id = entity["type_id"]
+            task_type_name = task_type_names_by_id[task_type_id]
+            task_data = copy.deepcopy(parent_data)
+
+            task_data["task"] = {
+                "name": entity["name"],
+                "type": task_type_name
+                }
+            self.log.info(f"Task data: {task_data}")
+            work_path = self.compute_template_folder(anatomy, task_data, work_keys)
+            self.log.info(f"Edit template: {editorial_template}")
+            for key in editorial_template:
+                work_path = os.path.join( work_path, editorial_template[key])
+                path = work_path
 
         elif not is_asset and not is_task:
             folder_path = self.compute_template_folder(anatomy, project_data, work_keys)
@@ -251,6 +218,176 @@ class LaunchFolder(BaseAction):
             "success": True,
             "message": "Opening folder"
         }
+
+    def get_editorial_folders_DF(self, entity):
+        ed_folder_template = {}
+        if entity["name"] == "Script_Ready":
+            ed_folder_template= {
+                "task": "story",
+                "subfolder": "Final Script"
+            }
+        elif entity["name"] == "Asset_Breakdown":
+            ed_folder_template= {
+                "task": "asset_breakdown"
+            }
+        elif entity["name"] == "Scene_Breakdown":
+            ed_folder_template= {
+                "task": "scene_breakdown",
+            }
+        elif entity["name"] == "Thumbnail_Animatic":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "thumbnail_animatic_workfiles"
+            }
+        elif entity["name"] == "Scratch_VO":
+            ed_folder_template= {
+                "task": "sound",
+                "subfolder": "01_scratch"
+            }
+        elif entity["name"] == "Edit_Scratch_Sound":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        elif entity["name"] == "Animatic":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "animatic_workfiles"
+            }
+        elif entity["name"] == "VO_Record":
+            ed_folder_template= {
+                "task": "sound",
+                "subfolder": "02_VO"
+            }
+        elif entity["name"] == "Edit_Animatic":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        elif entity["name"] == "Create_Shots":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        elif entity["name"] == "Sound":
+            ed_folder_template= {
+                "task": "sound",
+            }
+        elif entity["name"] == "Edit_Animation":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        elif entity["name"] == "Edit_Comp":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        return ed_folder_template
+
+    def get_editorial_folders_MT(self, entity):
+        ed_folder_template = {}
+        if entity["name"] == "Story_Script":
+            ed_folder_template= {
+                "task": "story",
+                "subfolder": "script"
+            }
+        elif entity["name"] == "VO_Script_Read":
+            ed_folder_template= {
+                "task": "sound"
+            }
+        elif entity["name"] == "Radioplay":
+            ed_folder_template= {
+                "task": "sound",
+                "subfolder": "01_radioplay"
+            }
+        elif entity["name"] == "Asset_Breakdown":
+            ed_folder_template= {
+                "task": "asset_breakdown"
+            }
+        elif entity["name"] == "Animatic_Setup":
+            ed_folder_template= {
+                "task": "animatic"
+            }
+        elif entity["name"] == "Thumbnail_Animatic_A":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "thumbnail_animatic_workfiles"
+            }
+        elif entity["name"] == "Thumbnail_Animatic_B":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "thumbnail_animatic_workfiles"
+            }
+        elif entity["name"] == "Thumbnail_Animatic_C":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "thumbnail_animatic_workfiles"
+            }
+        elif entity["name"] == "Animatic_sc01":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "animatic_workfiles"
+            }
+        elif entity["name"] == "Animatic_sc02":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "animatic_workfiles"
+            }
+        elif entity["name"] == "Animatic_sc03":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "animatic_workfiles"
+            }
+        elif entity["name"] == "Animatic_sc04":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "animatic_workfiles"
+            }
+        elif entity["name"] == "Animatic_sc05":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "animatic_workfiles"
+            }
+        elif entity["name"] == "Animatic_sc06":
+            ed_folder_template= {
+                "task": "animatic",
+                "subfolder": "animatic_workfiles"
+            }
+
+        elif entity["name"] == "VO_Record":
+            ed_folder_template= {
+                "task": "sound",
+                "subfolder": "02_VO"
+            }
+        elif entity["name"] == "Edit_Animatic":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        elif entity["name"] == "Create_Shots":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        elif entity["name"] == "Sound_Music":
+            ed_folder_template= {
+                "task": "sound",
+                "subfolder": "03_music"
+            }
+        elif entity["name"] == "Edit_Animation":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        elif entity["name"] == "Edit_Comp":
+            ed_folder_template= {
+                "task": "edit",
+                "subfolder": "edit_workfiles"
+            }
+        return ed_folder_template
+
+
 
     def get_all_entities(
         self, session, entities, task_entities, other_entities
