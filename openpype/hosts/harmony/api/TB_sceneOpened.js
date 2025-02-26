@@ -544,6 +544,15 @@ function start() {
         // empty stub
         return path;
     };
+
+    self.initSunAndMoonScripts = function() {
+        app.avalonClient.send({
+            'module': 'openpype.hosts.harmony.api',
+            'method': 'inject_sun_and_moon_js',
+        }, false);
+    };
+
+    this.initSunAndMoonScripts()
 }
 
 function ensureSceneSettings() {

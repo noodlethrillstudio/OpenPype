@@ -214,6 +214,10 @@ class CollectSettingsSimpleInstances(pyblish.api.InstancePlugin):
 
         if not instance.data.get("thumbnailSource"):
             instance.data["thumbnailSource"] = first_filepath
+        if instance.data.get("thumbnailSource") == None:
+                instance.data["thumbnailSource"] = first_filepath
+        self.log.debug("thumbnail source has been set to: {}".format(instance.data["thumbnailSource"]))
+        self.log.debug("thumbnail source taken from first_filepath: {}".format(first_filepath))
 
         review_representation["tags"].append("review")
 
