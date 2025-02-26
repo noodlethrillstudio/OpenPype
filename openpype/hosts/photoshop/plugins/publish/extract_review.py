@@ -179,6 +179,7 @@ class ExtractReview(publish.Extractor):
         ]
         self.log.debug("mov args:: {}".format(args))
         _output = run_subprocess(args)
+
         instance.data["representations"].append({
             "name": "mov",
             "ext": "mov",
@@ -189,6 +190,8 @@ class ExtractReview(publish.Extractor):
             "fps": fps,
             "tags": self.mov_options['tags']
         })
+        instance.data["frameStart"] = 1
+        instance.data["frameEnd"] = no_of_frames
 
     def _generate_thumbnail(
         self, ffmpeg_args, instance, source_files_pattern, staging_dir

@@ -66,6 +66,7 @@ class CollectAutoReview(pyblish.api.ContextPlugin):
         task_name = context.data["task"]
         host_name = context.data["hostName"]
         asset_doc = context.data["assetEntity"]
+        frame_start = context.data["frameStart"]
 
         asset_name = get_asset_name_identifier(asset_doc)
 
@@ -88,7 +89,8 @@ class CollectAutoReview(pyblish.api.ContextPlugin):
             "families": [],
             "representations": [],
             "asset": asset_name,
-            "publish": self.publish
+            "publish": self.publish,
+            "frameStart": frame_start
         })
 
         self.log.debug("auto review created::{}".format(instance.data))

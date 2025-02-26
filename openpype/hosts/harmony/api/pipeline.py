@@ -141,6 +141,7 @@ def application_launch(event):
     harmony.send({"script": pype_harmony_js})
     harmony.send({"script": script})
     inject_avalon_js()
+    #inject_sun_and_moon_js()
 
     # ensure_scene_settings()
     check_inventory()
@@ -212,6 +213,17 @@ def inject_avalon_js():
     # send AvalonHarmony.js to Harmony
     harmony.send({"script": script})
 
+def inject_sun_and_moon_js():
+    """Inject sun and moon scripts into Harmony."""
+    sun_and_moon_script_path = Path(PLUGINS_DIR) / "sunandmoon"
+    scripts = sun_and_moon_script_path.iterdir()
+
+
+    for file in scripts:
+        script = file.read_text()
+        harmony.send({"script": script})
+        file_name = file.stem  # This gets the filename without '.js'
+        harmony.send({"script": f"{file_name}.launchScript()"})
 
 def ls():
     """Yields containers from Harmony scene.
