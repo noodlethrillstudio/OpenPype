@@ -24,9 +24,17 @@ var CreateRender = function() {};
  * @param {array} args Arguments for instance.
  */
 CreateRender.prototype.create = function(args) {
-    node.setTextAttr(args[0], 'DRAWING_TYPE', 1, 'PNGDP4');
+    nodeLower = args[1].toLowerCase()
+    if (nodeLower.indexOf("animation") !== -1 || nodeLower.indexOf("compositing") !== -1){
+        node.setTextAttr(args[0], 'DRAWING_TYPE', 1, 'PNGDP4');
+        node.setTextAttr(args[0], 'DRAWING_NAME', 1, args[1]);
+        node.setTextAttr(args[0], 'MOVIE_PATH', 1, args[1]);
+    }
+    else{
+    node.setTextAttr(args[0], 'DRAWING_TYPE', 1, 'PNG4');
     node.setTextAttr(args[0], 'DRAWING_NAME', 1, args[1]);
     node.setTextAttr(args[0], 'MOVIE_PATH', 1, args[1]);
+    }
 };
 
 // add self to Pype Loaders

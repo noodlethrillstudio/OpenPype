@@ -60,6 +60,16 @@ class addNotesFromCsv(BaseAction):
 
         },
         {
+            "label":"Prefix:",
+            "type": "textarea",
+            "name":"prefix",
+        },
+        {
+            "label":"Suffix:",
+            "type": "textarea",
+            "name":"suffix",
+        },
+        {
             "label": "Paste CSV Data",
             "type": "textarea",
             "name": "csv_input",
@@ -70,7 +80,12 @@ class addNotesFromCsv(BaseAction):
 
     def launch(self, session, entities, event):
 
+
+        project_name = entities[0]['project']['name']
+
         type_selection = event["data"]["values"].get("type_selection")
+        prefix = event["data"]["values"].get("prefix")
+        suffix = event["data"]["values"].get("suffix")
         if not type_selection:
             print("type selection is empty")
             return False
@@ -84,40 +99,43 @@ class addNotesFromCsv(BaseAction):
         else:
             print(csv_data)
 
-        self.parse_csv(csv_data, type_selection, event, session)
-
+        self.parse_csv(csv_data, type_selection, prefix, suffix, project_name, event, session)
 
         return True
 
-    def add_notes_to_ftrack(self, parent_name, notes, task_name, task_type, type_selection, user, event, session):
+    def add_notes_to_ftrack(self, parent_name, notes, task_name, task_type, type_selection, prefix, suffix, project_name, user, event, session):
             """Function to process asset_name and notes."""
+
             if type_selection == "assets":
-                task = session.query("Task where type.name is '{}' and parent.name is '{}'".format(task_type, parent_name)).one()
+                task = session.query("Task where type.name is '{}' and parent.name is '{}' and project.name is '{}'".format(task_type, parent_name, project_name)).one()
 
             elif type_selection == "shots":
                 print(parent_name, task_name)
-                task = session.query("Task where name is '{}' and parent.name is '{}'".format(task_name, parent_name)).one()
-            notes = "BRIEF NOTES: " + notes
+                task = session.query("Task where name is '{}' and parent.name is '{}' and project.name is '{}'".format(task_name, parent_name, project_name)).one()
 
-            if not task["notes"]:
-                new_note = session.create("Note", {
-                "content": notes,
-                "author" : user
-                })
+            if prefix:
+                notes = prefix +"<br><br>"+ notes
+            if suffix:
+                notes = notes + "<br><br>" + suffix
 
-                task["notes"] = [new_note]
-                session.commit()
-                print(task["name"] +" " +parent_name)
-                print("notes: " +notes)
-                print(f"Adding notes to FTrack: {parent_name} -> {notes}")
-                return  {
-                    'success': True,
-                    'message': f"Adding notes to FTrack: {parent_name} -> {notes}"
-                            }
+            notes = notes.replace("\n", "<br>")
+            notes = notes.replace("-", "&bull;")
+            notes = notes.replace("\t", "&#9;")
+            new_note = task.create_note(notes, user)
+
+            #task["notes"] = [new_note]
+            session.commit()
+            print(task["name"] +" " +parent_name)
+            print("notes: " +notes)
+            print(f"Adding notes to FTrack: {parent_name} -> {notes}")
+            return  {
+                'success': True,
+                'message': f"Adding notes to FTrack: {parent_name} -> {notes}"
+                        }
             print("note with content already exist, skipping")
 
 
-    def parse_csv(self,csv_data, type_selection, event, session):
+    def parse_csv(self,csv_data, type_selection, prefix, suffix, project_name, event, session):
         """Parses CSV text and processes each row."""
         reader = csv.DictReader(io.StringIO(csv_data), delimiter='\t')
         user = session.query("User where username is '{0}'".format(event["source"]["user"]["username"])).one()
@@ -127,15 +145,17 @@ class addNotesFromCsv(BaseAction):
             notes = row.get("notes", "").strip()
             task_name = row.get("task_name", "").strip()
             task_type = row.get("task_type", "").strip()
+            if not task_type:
+                task_type = task_name
 
 
             if type_selection == "assets":
                 if asset_name and notes:
-                    self.add_notes_to_ftrack(asset_name, notes, task_name, task_type, type_selection, user, event, session)
+                    self.add_notes_to_ftrack(asset_name, notes, task_name, task_type, type_selection, prefix, suffix, user, project_name, event, session)
 
             elif type_selection == "shots":
                 if shot_name and notes:
-                    self.add_notes_to_ftrack(shot_name, notes, task_name, task_type, type_selection, user, event, session)
+                    self.add_notes_to_ftrack(shot_name, notes, task_name, task_type, type_selection, prefix, suffix, project_name, user, event, session)
 
 
 def register(session):

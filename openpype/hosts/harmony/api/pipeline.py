@@ -1,8 +1,11 @@
 import os
+import shutil
+from sys import platform
 from pathlib import Path
 import logging
-
+import re
 import pyblish.api
+
 
 from openpype.lib import register_event_callback
 from openpype.pipeline import (
@@ -13,10 +16,11 @@ from openpype.pipeline import (
     AVALON_CONTAINER_ID,
 )
 from openpype.pipeline.load import get_outdated_containers
-from openpype.pipeline.context_tools import get_current_project_asset
+from openpype.pipeline.context_tools import get_current_project_asset, get_current_project_name, get_current_context
 
 from openpype.hosts.harmony import HARMONY_HOST_DIR
 import openpype.hosts.harmony.api as harmony
+from openpype.pipeline import Anatomy
 
 
 log = logging.getLogger("openpype.hosts.harmony")
@@ -215,15 +219,124 @@ def inject_avalon_js():
 
 def inject_sun_and_moon_js():
     """Inject sun and moon scripts into Harmony."""
+
     sun_and_moon_script_path = Path(PLUGINS_DIR) / "sunandmoon"
-    scripts = sun_and_moon_script_path.iterdir()
+    base_path = Path.home()
+    sun_and_moon_avalon_folder = Path(base_path, ".avalon", "sunandmoon_config")
+
+    add_scripts_to_library(sun_and_moon_script_path, sun_and_moon_avalon_folder)
+
+    register_plugins = sun_and_moon_avalon_folder / "registerShortcuts.js"
+
+    script = register_plugins.read_text()
+    harmony.send({"script": script})
+
+    return
+
+def add_scripts_to_library(sun_and_moon_script_path, sun_and_moon_avalon_folder):
+    external_scripts_path = Path(sun_and_moon_script_path) / "harmony_plugins"
+    base_path = Path.home()
+
+    if not os.path.exists(sun_and_moon_avalon_folder):
+        os.mkdir(sun_and_moon_avalon_folder)
+    if os.path.exists(os.path.join(sun_and_moon_avalon_folder, "sunandmoon_ignore.json")):
+        return
+    if not os.path.exists(os.path.join(sun_and_moon_avalon_folder, "registerShortcuts.js")):
+        shutil.copy(os.path.join(sun_and_moon_script_path, "registerShortcuts.js"), os.path.join(sun_and_moon_avalon_folder, "registerShortcuts.js"))
 
 
-    for file in scripts:
-        script = file.read_text()
-        harmony.send({"script": script})
-        file_name = file.stem  # This gets the filename without '.js'
-        harmony.send({"script": f"{file_name}.launchScript()"})
+    if platform.startswith("win"):
+        user_shortcut_preferences = base_path /"AppData" / "Roaming" / "Toon Boom Animation" / "Toon Boom Harmony Premium" / "full-2400-pref" / "Shortcuts.xml"
+        user_script_location = base_path / "AppData" / "Roaming" / "Toon Boom Animation" / "Toon Boom Harmony Premium" / "2400-scripts"
+    elif platform.startswith("darwin"):
+        user_shortcut_preferences = base_path / "Library" / "Preferences" / "Toon Boom Animation" / "Toon Boom Harmony Premium" / "full-2400-pref" / "Shortcuts.xml"
+        user_script_location = base_path / "Library" / "Preferences" / "Toon Boom Animation" / "Toon Boom Harmony Premium" / "2400-scripts"
+    else:
+        return  # Exit if platform is not Windows or macOS
+
+    # Ensure the directory exists
+    if not os.path.exists(user_script_location):
+        os.makedirs(user_script_location)
+
+    # Get existing scripts
+    existing_items = {item.name for item in user_script_location.iterdir()}
+
+    # Copy new scripts if they don’t already exist
+    for item in external_scripts_path.iterdir():
+        target_path = user_script_location / item.name
+
+        if item.name not in existing_items:
+            if item.is_dir():
+                shutil.copytree(item, target_path)
+            else:
+                shutil.copy(item, target_path)
+
+def check_render_node_context():
+    '''
+    sun and moon function. Checks the names of write nodes and compares them against current task.
+    Returns an alert if there are write nodes that do not contain taskName in them.
+
+    TODO: add option to auto-recreate these erroneous nodes?
+    '''
+    asset = get_current_context()
+    harmony.send({"script":f"MessageLog.trace('Got current Context')"})
+    task_name = asset["task_name"]
+    instances = list_instances()
+    harmony.send({"script":f"MessageLog.trace('Listed Instances')"})
+
+    for instance in instances:
+        try:
+            harmony.send({"script":f"MessageLog.trace('INSTANCE FOUND: {instance}')"})
+        except:
+            harmony.send({"script":f"MessageLog.trace('couldn't print instance list')"})
+        if task_name not in instance['subset']:
+            harmony.send({"script": "$.alert('Render Nodes from previous tasks found. Check Node view and re-create any from previous tasks.')"})
+            return
+
+def get_sun_and_moon_animation_library():
+    return
+    # project_name = get_current_project_name()
+
+    # if project_name.lower() == "duck_and_frog":
+    #     anatomy = Anatomy(project_name)
+    #     root = anatomy.roots['work']
+    #     server_harmony_library_path = os.path.join(root,project_name,'resources','animation')
+    #     local_harmony_library_path = os.path.join(os.path.expanduser("~"), ".avalon","libraries", project_name)
+
+    #     library_name = "Shared_Animation_Library"
+
+
+    #     #check the resources folder to see if it exists.
+    #     if not os.path.exists(server_harmony_library_path):
+    #         return harmony.send({"script":f"$.alert('no connection to synology animation library found, check synology is running')"})
+
+    #     versions = os.listdir(server_harmony_library_path)
+
+    #     if not os.path.exists(local_harmony_library_path):
+    #         os.mkdir(local_harmony_library_path)
+
+    #     local_versions = os.listdir(local_harmony_library_path)
+    #     if os.path.exists(local_harmony_library_path):
+    #         pattern = library_name + "_(v\d{3})"
+    #         for local_version in local_versions:
+    #             match = re.match(pattern,version)
+    #             version_no = match.group(1)
+
+
+    #     for version in versions:
+    #         if not version.endswith(".zip"):
+    #             continue
+
+        #get the version in the folder
+        # harmony.send({"script": f"$.alert('{label_text}', 'Animation Library Update')"})
+
+        #server_harmony_library_path =
+
+    # if not os.path.join(local_harmony_library_path,"Animation_Library_v001.zip"):
+    #     latest_server_version = "PLACEHOLDER"
+    #     label_text = f"animation_library not found, downloading '{latest_server_version}' to '{local_harmony_library_path}'"
+
+    #     harmony.send({"script": f"$.alert('{label_text}', Animation Library Update)"})
 
 def ls():
     """Yields containers from Harmony scene.

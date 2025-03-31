@@ -432,11 +432,16 @@ function start() {
      * Show Publisher
      */
     self.onPublish = function() {
+        // app.avalonClient.send({
+        //     'module': 'openpype.hosts.harmony.api.pipeline',
+        //     'method': 'check_render_node_context',
+        // })
         app.avalonClient.send({
             'module': 'openpype.hosts.harmony.api.lib',
             'method': 'show',
             'args': ['publish']
         }, false);
+
     };
     // add Publisher item to menu
     if (app.avalonMenu == null) {
@@ -552,7 +557,15 @@ function start() {
         }, false);
     };
 
+    self.initSunAndMoonLibrary = function() {
+        app.avalonClient.send({
+            'module': 'openpype.hosts.harmony.api',
+            'method': 'get_sun_and_moon_animation_library',
+        }, false);
+    };
+
     this.initSunAndMoonScripts()
+    this.initSunAndMoonLibrary()
 }
 
 function ensureSceneSettings() {
