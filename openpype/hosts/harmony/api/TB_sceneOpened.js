@@ -432,10 +432,10 @@ function start() {
      * Show Publisher
      */
     self.onPublish = function() {
-        // app.avalonClient.send({
-        //     'module': 'openpype.hosts.harmony.api.pipeline',
-        //     'method': 'check_render_node_context',
-        // })
+        app.avalonClient.send({
+            'module': 'openpype.hosts.harmony.api.pipeline',
+            'method': 'check_render_node_context',
+        })
         app.avalonClient.send({
             'module': 'openpype.hosts.harmony.api.lib',
             'method': 'show',
