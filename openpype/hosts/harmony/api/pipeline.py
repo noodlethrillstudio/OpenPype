@@ -145,7 +145,6 @@ def application_launch(event):
     harmony.send({"script": pype_harmony_js})
     harmony.send({"script": script})
     inject_avalon_js()
-    #inject_sun_and_moon_js()
 
     # ensure_scene_settings()
     check_inventory()
@@ -281,62 +280,13 @@ def check_render_node_context():
     asset = get_current_context()
     harmony.send({"script":f"MessageLog.trace('Got current Context')"})
     task_name = asset["task_name"]
-    instances = list_instances()
-    harmony.send({"script":f"MessageLog.trace('Listed Instances')"})
+    harmony.send({"script":f"MessageLog.trace('Task Name: {task_name}')"})
+    instances = list_instances(remove_orphaned=True)
 
     for instance in instances:
-        try:
-            harmony.send({"script":f"MessageLog.trace('INSTANCE FOUND: {instance}')"})
-        except:
-            harmony.send({"script":f"MessageLog.trace('couldn't print instance list')"})
-        if task_name not in instance['subset']:
-            harmony.send({"script": "$.alert('Render Nodes from previous tasks found. Check Node view and re-create any from previous tasks.')"})
-            return
+        if task_name.lower() not in instance['subset'].lower() and "template" not in instance['subset'].lower():
+            harmony.send({"script": f"$.alert('Render Nodes {instance['subset']} from previous tasks found. Check Node view and re-create any from previous tasks.')"})
 
-def get_sun_and_moon_animation_library():
-    return
-    # project_name = get_current_project_name()
-
-    # if project_name.lower() == "duck_and_frog":
-    #     anatomy = Anatomy(project_name)
-    #     root = anatomy.roots['work']
-    #     server_harmony_library_path = os.path.join(root,project_name,'resources','animation')
-    #     local_harmony_library_path = os.path.join(os.path.expanduser("~"), ".avalon","libraries", project_name)
-
-    #     library_name = "Shared_Animation_Library"
-
-
-    #     #check the resources folder to see if it exists.
-    #     if not os.path.exists(server_harmony_library_path):
-    #         return harmony.send({"script":f"$.alert('no connection to synology animation library found, check synology is running')"})
-
-    #     versions = os.listdir(server_harmony_library_path)
-
-    #     if not os.path.exists(local_harmony_library_path):
-    #         os.mkdir(local_harmony_library_path)
-
-    #     local_versions = os.listdir(local_harmony_library_path)
-    #     if os.path.exists(local_harmony_library_path):
-    #         pattern = library_name + "_(v\d{3})"
-    #         for local_version in local_versions:
-    #             match = re.match(pattern,version)
-    #             version_no = match.group(1)
-
-
-    #     for version in versions:
-    #         if not version.endswith(".zip"):
-    #             continue
-
-        #get the version in the folder
-        # harmony.send({"script": f"$.alert('{label_text}', 'Animation Library Update')"})
-
-        #server_harmony_library_path =
-
-    # if not os.path.join(local_harmony_library_path,"Animation_Library_v001.zip"):
-    #     latest_server_version = "PLACEHOLDER"
-    #     label_text = f"animation_library not found, downloading '{latest_server_version}' to '{local_harmony_library_path}'"
-
-    #     harmony.send({"script": f"$.alert('{label_text}', Animation Library Update)"})
 
 def ls():
     """Yields containers from Harmony scene.
@@ -391,7 +341,11 @@ def list_instances(remove_orphaned=True):
 
         if remove_orphaned:
             node_name = key.split("/")[-1]
-            located_node = harmony.find_node_by_name(node_name, 'WRITE')
+            harmony.send({"script":f"MessageLog.trace('NODE NAME IS:  {node_name}')"})
+            if "template" in node_name:
+                located_node = harmony.find_node_by_name(node_name, 'COMPOSITE')
+            else:
+                located_node = harmony.find_node_by_name(node_name, 'WRITE')
             if not located_node:
                 print("Removing orphaned instance {}".format(key))
                 harmony.remove(key)

@@ -18,8 +18,7 @@ from .pipeline import (
     export_template,
     on_pyblish_instance_toggled,
     inject_avalon_js,
-    inject_sun_and_moon_js,
-    get_sun_and_moon_animation_library,
+    inject_sun_and_moon_js
 )
 
 from .lib import (
@@ -64,8 +63,7 @@ __all__ = [
     "export_template",
     "on_pyblish_instance_toggled",
     "inject_avalon_js",
-    "inject_sun_and_moon_js",
-    "get_sun_and_moon_animation_library",
+    "inject_sun_and_moon_js"
 
     # lib
     "launch",

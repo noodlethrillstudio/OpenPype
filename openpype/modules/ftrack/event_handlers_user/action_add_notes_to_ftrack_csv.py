@@ -45,11 +45,28 @@ class addNotesFromCsv(BaseAction):
         creates ftrack "["data"]["values"], which need to be fetched using .get()
         # '''
 
+        project = entities[0]['project']
+
+        data_all = []
+
+        for user_role in project['user_security_role_projects']:
+            user = user_role['user_security_role']['user']
+            data = {}
+            data['label'] = str(user['first_name'] + " " + user['last_name'])
+            data['value'] = user['id']
+            if user['id'] not in [d['value'] for d in data_all]:
+                data_all.append(data)
 
         if not event['data'].get('values', {}):
 
             return [
         {
+            "label": "Select User to Own Notes",
+            "type": "enumerator",
+            "name": "user_selection",
+            "data": data_all,},
+
+            {
             "label": "Select Type",
             "type": "enumerator",
             "name": "type_selection",
@@ -99,7 +116,13 @@ class addNotesFromCsv(BaseAction):
         else:
             print(csv_data)
 
-        self.parse_csv(csv_data, type_selection, prefix, suffix, project_name, event, session)
+        user = event["data"]["values"].get("user_selection")
+        if not user:
+            user = session.query("User where username is '{0}'".format(event["source"]["user"]["username"])).one()
+        else:
+            user = session.query("User where id is '{0}'".format(user)).one()
+
+        self.parse_csv(csv_data, type_selection, prefix, suffix, project_name,user, event, session)
 
         return True
 
@@ -124,7 +147,6 @@ class addNotesFromCsv(BaseAction):
             new_note = task.create_note(notes, user)
 
             #task["notes"] = [new_note]
-            session.commit()
             print(task["name"] +" " +parent_name)
             print("notes: " +notes)
             print(f"Adding notes to FTrack: {parent_name} -> {notes}")
@@ -135,10 +157,10 @@ class addNotesFromCsv(BaseAction):
             print("note with content already exist, skipping")
 
 
-    def parse_csv(self,csv_data, type_selection, prefix, suffix, project_name, event, session):
+    def parse_csv(self,csv_data, type_selection, prefix, suffix, project_name, user, event, session):
         """Parses CSV text and processes each row."""
         reader = csv.DictReader(io.StringIO(csv_data), delimiter='\t')
-        user = session.query("User where username is '{0}'".format(event["source"]["user"]["username"])).one()
+
         for row in reader:
             asset_name = row.get("asset_name", "").strip()
             shot_name = row.get("shot_name", "").strip()
@@ -152,10 +174,14 @@ class addNotesFromCsv(BaseAction):
             if type_selection == "assets":
                 if asset_name and notes:
                     self.add_notes_to_ftrack(asset_name, notes, task_name, task_type, type_selection, prefix, suffix, user, project_name, event, session)
+                    session.commit()
+
 
             elif type_selection == "shots":
                 if shot_name and notes:
                     self.add_notes_to_ftrack(shot_name, notes, task_name, task_type, type_selection, prefix, suffix, project_name, user, event, session)
+                    session.commit()
+
 
 
 def register(session):
