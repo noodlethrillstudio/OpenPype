@@ -15,6 +15,14 @@ class createAnimationListReview(BaseAction):
     description = 'Create new list for animation review. Add animation shots if they exist, blocking shots if not, and animatic shots if blocking doesn\'t exist.'
 
     def discover(self, session, entities, event):
+        user_name = event["source"]["user"]["username"]
+
+        user = session.query("User where username is '{}'".format(user_name)).one()
+        allowed_roles = ["Administrator", "Project Manager"]
+        user_roles = [role["role"]["name"] for role in user["user_security_roles"]]
+        if not any(role in allowed_roles for role in user_roles):
+            return False
+
         if entities[0].entity_type  != 'Episode' or len(entities) != 1:
             return False
         return True

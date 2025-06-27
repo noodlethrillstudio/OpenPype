@@ -29,11 +29,15 @@ CreateRender.prototype.create = function(args) {
         node.setTextAttr(args[0], 'DRAWING_TYPE', 1, 'PNGDP4');
         node.setTextAttr(args[0], 'DRAWING_NAME', 1, args[1]);
         node.setTextAttr(args[0], 'MOVIE_PATH', 1, args[1]);
+        node.setTextAttr(args[0], 'MOVIE_FORMAT', 1, "com.toonboom.mp4.1.0");
+
     }
     else{
     node.setTextAttr(args[0], 'DRAWING_TYPE', 1, 'PNG4');
     node.setTextAttr(args[0], 'DRAWING_NAME', 1, args[1]);
     node.setTextAttr(args[0], 'MOVIE_PATH', 1, args[1]);
+    node.setTextAttr(args[0], 'EXPORT_TO_MOVIE', 1, "true")
+    node.setTextAttr(args[0], 'MOVIE_FORMAT', 1, "com.toonboom.mp4.1.0");
     }
 };
 

@@ -21,6 +21,7 @@ from openpype.pipeline.context_tools import get_current_project_asset, get_curre
 from openpype.hosts.harmony import HARMONY_HOST_DIR
 import openpype.hosts.harmony.api as harmony
 from openpype.pipeline import Anatomy
+from openpype.hosts.harmony.plugins.create.create_render import CreateRender
 
 
 log = logging.getLogger("openpype.hosts.harmony")
@@ -282,10 +283,12 @@ def check_render_node_context():
     task_name = asset["task_name"]
     harmony.send({"script":f"MessageLog.trace('Task Name: {task_name}')"})
     instances = list_instances(remove_orphaned=True)
-
+    outofdateinstances = []
     for instance in instances:
         if task_name.lower() not in instance['subset'].lower() and "template" not in instance['subset'].lower():
-            harmony.send({"script": f"$.alert('Render Nodes {instance['subset']} from previous tasks found. Check Node view and re-create any from previous tasks.')"})
+            outofdateinstances.append(instance['subset'])
+    instancestr = ", ".join(outofdateinstances)
+    harmony.send({"script": f"$.alert('Render Nodes {instancestr} from previous tasks found. Check Node view and re-create any from previous tasks.')"})
 
 
 def ls():
