@@ -21,6 +21,7 @@ from openpype.pipeline.context_tools import get_current_project_asset, get_curre
 from openpype.hosts.harmony import HARMONY_HOST_DIR
 import openpype.hosts.harmony.api as harmony
 from openpype.pipeline import Anatomy
+from openpype.hosts.harmony.plugins.create.create_render import CreateRender
 
 
 log = logging.getLogger("openpype.hosts.harmony")
@@ -216,32 +217,16 @@ def inject_avalon_js():
     # send AvalonHarmony.js to Harmony
     harmony.send({"script": script})
 
-def inject_sun_and_moon_js():
-    """Inject sun and moon scripts into Harmony."""
-
-    sun_and_moon_script_path = Path(PLUGINS_DIR) / "sunandmoon"
-    base_path = Path.home()
-    sun_and_moon_avalon_folder = Path(base_path, ".avalon", "sunandmoon_config")
-
-    add_scripts_to_library(sun_and_moon_script_path, sun_and_moon_avalon_folder)
-
-    register_plugins = sun_and_moon_avalon_folder / "registerShortcuts.js"
-
-    script = register_plugins.read_text()
-    harmony.send({"script": script})
-
-    return
-
-def add_scripts_to_library(sun_and_moon_script_path, sun_and_moon_avalon_folder):
-    external_scripts_path = Path(sun_and_moon_script_path) / "harmony_plugins"
+def add_scripts_to_library(sun_and_moon_script_path: Path, sun_and_moon_avalon_folder: Path):
+    external_scripts_path = sun_and_moon_script_path / "harmony_plugins"
     base_path = Path.home()
 
-    if not os.path.exists(sun_and_moon_avalon_folder):
+    if not sun_and_moon_avalon_folder.exists():
         os.mkdir(sun_and_moon_avalon_folder)
-    if os.path.exists(os.path.join(sun_and_moon_avalon_folder, "sunandmoon_ignore.json")):
+    if (sun_and_moon_avalon_folder / "sunandmoon_ignore.json").exists():
         return
-    if not os.path.exists(os.path.join(sun_and_moon_avalon_folder, "registerShortcuts.js")):
-        shutil.copy(os.path.join(sun_and_moon_script_path, "registerShortcuts.js"), os.path.join(sun_and_moon_avalon_folder, "registerShortcuts.js"))
+    if not (sun_and_moon_avalon_folder / "registerShortcuts.js").exists():
+        shutil.copy((sun_and_moon_script_path / "registerShortcuts.js"), (sun_and_moon_avalon_folder / "registerShortcuts.js"))
 
 
     if platform.startswith("win"):
@@ -270,6 +255,22 @@ def add_scripts_to_library(sun_and_moon_script_path, sun_and_moon_avalon_folder)
             else:
                 shutil.copy(item, target_path)
 
+def inject_sun_and_moon_js():
+    """Inject sun and moon scripts into Harmony."""
+
+    sun_and_moon_script_path = Path(PLUGINS_DIR) / "sunandmoon"
+    base_path = Path.home()
+    sun_and_moon_avalon_folder = Path(base_path, ".avalon", "sunandmoon_config")
+
+    add_scripts_to_library(sun_and_moon_script_path, sun_and_moon_avalon_folder)
+
+    register_plugins = sun_and_moon_avalon_folder / "registerShortcuts.js"
+
+    script = register_plugins.read_text()
+    harmony.send({"script": script})
+
+    return
+
 def check_render_node_context():
     '''
     sun and moon function. Checks the names of write nodes and compares them against current task.
@@ -282,10 +283,14 @@ def check_render_node_context():
     task_name = asset["task_name"]
     harmony.send({"script":f"MessageLog.trace('Task Name: {task_name}')"})
     instances = list_instances(remove_orphaned=True)
+    outofdateinstances = []
 
     for instance in instances:
         if task_name.lower() not in instance['subset'].lower() and "template" not in instance['subset'].lower():
-            harmony.send({"script": f"$.alert('Render Nodes {instance['subset']} from previous tasks found. Check Node view and re-create any from previous tasks.')"})
+            outofdateinstances.append(instance['subset'])
+    if outofdateinstances:
+        instancestr = ", ".join(outofdateinstances)
+        harmony.send({"script": f"$.alert('Render Nodes {instancestr} from previous tasks found. Check Node view and re-create any from previous tasks.')"})
 
 
 def ls():

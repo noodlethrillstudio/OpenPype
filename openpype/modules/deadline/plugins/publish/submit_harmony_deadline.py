@@ -6,6 +6,7 @@ from collections import OrderedDict
 from zipfile import ZipFile, is_zipfile
 import re
 from datetime import datetime
+import tempfile
 
 import attr
 import pyblish.api
@@ -305,73 +306,13 @@ class HarmonySubmitDeadline(
 
         return job_info
 
-    def _unzip_scene_file(self, published_scene: Path) -> Path:
-        """Unzip scene zip file to its directory.
-
-        Unzip scene file (if it is zip file) to its current directory and
-        return path to xstage file there. Xstage file is determined by its
-        name.
-
-        Args:
-            published_scene (Path): path to zip file.
-
-        Returns:
-            Path: The path to unzipped xstage.
-        """
-        # if not zip, bail out.
-        if "zip" not in published_scene.suffix or not is_zipfile(
-            published_scene.as_posix()
-        ):
-            self.log.error("Published scene is not in zip.")
-            self.log.error(published_scene)
-            raise AssertionError("invalid scene format")
-
-        xstage_path = (
-            published_scene.parent
-            / published_scene.stem
-            / f"{published_scene.stem}.xstage"
-        )
-        unzip_dir = (published_scene.parent / published_scene.stem)
-        with _ZipFile(published_scene, "r") as zip_ref:
-            # UNC path (//?/) added to minimalize risk with extracting
-            # to large file paths
-            zip_ref.extractall("//?/" + str(unzip_dir.as_posix()))
-
-        # find any xstage files in directory, prefer the one with the same name
-        # as directory (plus extension)
-        xstage_files = []
-        for scene in unzip_dir.iterdir():
-            if scene.suffix == ".xstage":
-                xstage_files.append(scene)
-
-        # there must be at least one (but maybe not more?) xstage file
-        if not xstage_files:
-            self.log.error("No xstage files found in zip")
-            raise AssertionError("Invalid scene archive")
-
-        ideal_scene = False
-        # find the one with the same name as zip. In case there can be more
-        # then one xtage file.
-        for scene in xstage_files:
-            # if /foo/bar/baz.zip == /foo/bar/baz/baz.xstage
-            #             ^^^                     ^^^
-            if scene.stem == published_scene.stem:
-                xstage_path = scene
-                ideal_scene = True
-
-        # but sometimes xstage file has different name then zip - in that case
-        # use that one.
-        if not ideal_scene:
-            xstage_path = xstage_files[0]
-        return xstage_path
-
     def get_plugin_info(self):
         # this is path to published scene workfile _ZIP_. Before
         # rendering, we need to unzip it.
         published_scene = Path(
             self.from_published_scene(False))
         self.log.debug(f"Processing {published_scene.as_posix()}")
-        xstage_path = self._unzip_scene_file(published_scene)
+        xstage_path = published_scene
         render_path = xstage_path.parent / "renders"
 
         # for submit_publish job to create .json file in
@@ -402,8 +343,12 @@ class HarmonySubmitDeadline(
 
         pattern = '[0]{' + str(self._instance.data["leadingZeros"]) + \
                   '}1\.[a-zA-Z]{3}'
-        render_prefix = re.sub(pattern, '',
-                               self._instance.data["expectedFiles"][0])
+        if self._instance.data["outputType"] == "Movie":
+            render_prefix = re.sub(".mov", '',
+                                self._instance.data["expectedFiles"][0])
+        else:
+            render_prefix = re.sub(pattern, '',
+                                self._instance.data["expectedFiles"][0])
         harmony_plugin_info.set_output(
             self._instance.data["setMembers"][0],
             self._instance.data["outputFormat"],

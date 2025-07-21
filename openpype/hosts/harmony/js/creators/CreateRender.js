@@ -25,15 +25,19 @@ var CreateRender = function() {};
  */
 CreateRender.prototype.create = function(args) {
     nodeLower = args[1].toLowerCase()
-    if (nodeLower.indexOf("animation") !== -1 || nodeLower.indexOf("compositing") !== -1){
+    if (nodeLower.indexOf("compositing") !== -1){
         node.setTextAttr(args[0], 'DRAWING_TYPE', 1, 'PNGDP4');
         node.setTextAttr(args[0], 'DRAWING_NAME', 1, args[1]);
         node.setTextAttr(args[0], 'MOVIE_PATH', 1, args[1]);
+        node.setTextAttr(args[0], 'MOVIE_FORMAT', 1, "com.toonboom.mp4.1.0");
+
     }
     else{
     node.setTextAttr(args[0], 'DRAWING_TYPE', 1, 'PNG4');
     node.setTextAttr(args[0], 'DRAWING_NAME', 1, args[1]);
     node.setTextAttr(args[0], 'MOVIE_PATH', 1, args[1]);
+    node.setTextAttr(args[0], 'EXPORT_TO_MOVIE', 1, "true")
+    node.setTextAttr(args[0], 'MOVIE_FORMAT', 1, "com.toonboom.mp4.1.0");
     }
 };
 

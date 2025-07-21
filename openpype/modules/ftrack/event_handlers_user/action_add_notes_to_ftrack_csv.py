@@ -29,15 +29,8 @@ class addNotesFromCsv(BaseAction):
     def discover(self, session, entities, event):
         """Return True if selection is a folder"""
 
-        valid = True
 
-        # # Check for multiple selection.
-        # if len(entities) != 1:
-        #     valid = False
-        # if entities[0]["type"] != "Folder":
-        #     valid = False
-
-        return valid
+        return True
 
     def interface(self, session, entities, event):
         '''returns a UI with dropdown menu
@@ -82,16 +75,17 @@ class addNotesFromCsv(BaseAction):
             "name":"prefix",
         },
         {
-            "label":"Suffix:",
-            "type": "textarea",
-            "name":"suffix",
-        },
-        {
             "label": "Paste CSV Data",
             "type": "textarea",
             "name": "csv_input",
 
         },
+        {
+            "label":"Suffix:",
+            "type": "textarea",
+            "name":"suffix",
+        },
+
     ]
 
 
@@ -136,17 +130,23 @@ class addNotesFromCsv(BaseAction):
                 print(parent_name, task_name)
                 task = session.query("Task where name is '{}' and parent.name is '{}' and project.name is '{}'".format(task_name, parent_name, project_name)).one()
 
+            lines = notes.split("\n")
+            new_lines = []
+            for line in lines:
+                if line.startswith("- ") :
+                    line = line.replace("- ", "&bull; ")
+                line = line.replace("\t", "&#9;")
+                new_lines.append(line)
+            notes = "<br>".join(new_lines)
+
+
             if prefix:
                 notes = prefix +"<br><br>"+ notes
             if suffix:
                 notes = notes + "<br><br>" + suffix
 
-            notes = notes.replace("\n", "<br>")
-            notes = notes.replace("-", "&bull;")
-            notes = notes.replace("\t", "&#9;")
             new_note = task.create_note(notes, user)
 
-            #task["notes"] = [new_note]
             print(task["name"] +" " +parent_name)
             print("notes: " +notes)
             print(f"Adding notes to FTrack: {parent_name} -> {notes}")

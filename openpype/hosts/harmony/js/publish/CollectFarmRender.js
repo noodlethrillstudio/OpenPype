@@ -28,24 +28,40 @@ var CollectFarmRender = function() {};
  *
  * var ret = [
  *    file_prefix, // like foo/bar-
- *    type, // PNG4, ...
+ *    type, // PNG4, ..
  *    leading_zeros, // 3 - for 0001
  *    start // start frame
  * ]
  */
 CollectFarmRender.prototype.getRenderNodeSettings = function(n) {
     // this will return
-    var output = [
-        node.getTextAttr(
-            n, frame.current(), 'DRAWING_NAME'),
-        node.getTextAttr(
-            n, frame.current(), 'DRAWING_TYPE'),
-        node.getTextAttr(
-            n, frame.current(), 'LEADING_ZEROS'),
-        node.getTextAttr(n, frame.current(), 'START'),
-        node.getEnable(n)
-    ];
-
+    var output = []
+    if(node.getTextAttr(n, frame.current(), 'EXPORT_TO_MOVIE') == "Output Movie"){
+            output = [
+                 node.getTextAttr(
+                n, frame.current(), 'DRAWING_NAME'),
+                node.getTextAttr(
+                    n, frame.current(), 'MOVIE_FORMAT'),
+                0,
+                node.getTextAttr(n, frame.current(), 'START'),
+                node.getEnable(n)
+            ]
+        }
+    else{
+        output = [
+            node.getTextAttr(
+                n, frame.current(), 'DRAWING_NAME'),
+            node.getTextAttr(
+                n, frame.current(), 'DRAWING_TYPE'),
+            node.getTextAttr(
+                n, frame.current(), 'LEADING_ZEROS'),
+            node.getTextAttr(n, frame.current(), 'START'),
+            node.getEnable(n)
+        ];
+    }
+    for(i=0;i<output.length;i++){
+        MessageLog.trace(output[i])
+    }
     return output;
 };
 

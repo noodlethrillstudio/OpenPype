@@ -6,12 +6,32 @@ from System.Text import *
 
 from Deadline.Plugins import *
 from Deadline.Scripting import *
+from zipfile import ZipFile, is_zipfile
+import re
+import tempfile
+from pathlib import Path as Path1
+
+
+
+
 
 def GetDeadlinePlugin():
     return HarmonyOpenPypePlugin()
 
 def CleanupDeadlinePlugin( deadlinePlugin ):
     deadlinePlugin.Cleanup()
+
+
+class _ZipFile(ZipFile):
+    """Extended check for windows invalid characters."""
+
+    # this is extending default zipfile table for few invalid characters
+    # that can come from Mac
+    _windows_illegal_characters = ":<>|\"?*\r\n\x00"
+    _windows_illegal_name_trans_table = str.maketrans(
+        _windows_illegal_characters,
+        "_" * len(_windows_illegal_characters)
+    )
 
 class HarmonyOpenPypePlugin( DeadlinePlugin ):
 
@@ -61,13 +81,79 @@ class HarmonyOpenPypePlugin( DeadlinePlugin ):
             self.FailRender( "Harmony render executable was not found in the configured separated list \"" + exeList + "\". The path to the render executable can be configured from the Plugin Configuration in the Deadline Monitor." )
         return exe
 
+    def _unzip_scene_file(self, published_scene):
+        #unzip to a tmp dir instead
+        """Unzip scene zip file to its directory.
+
+        Unzip scene file (if it is zip file) to its current directory and
+        return path to xstage file there. Xstage file is determined by its
+        name.
+
+        Args:
+            published_scene (Path): path to zip file.
+
+        Returns:
+            Path: The path to unzipped xstage.
+        """
+        self.LogInfo(f"published_scene::{published_scene}")
+        # if not zip, bail out.
+        published_scene = Path1(published_scene)
+        if "zip" not in published_scene.suffix or not is_zipfile(
+            published_scene.as_posix()
+        ):
+            self.log.error("Published scene is not in zip.")
+            self.log.error(published_scene)
+            raise AssertionError("invalid scene format")
+
+        xstage_path = (
+            published_scene.parent
+            / published_scene.stem
+            / f"{published_scene.stem}.xstage"
+        )
+
+        tmp_path  = Path1(tempfile.mkdtemp(suffix="_dl"))
+        unzip_dir = (tmp_path / published_scene.stem)
+
+        with _ZipFile(published_scene, "r") as zip_ref:
+            # UNC path (//?/) added to minimalize risk with extracting
+            # to large file paths
+            zip_ref.extractall("//?/" + str(unzip_dir.as_posix()))
+
+        # find any xstage files in directory, prefer the one with the same name
+        # as directory (plus extension)
+        xstage_files = []
+        for scene in unzip_dir.iterdir():
+            if scene.suffix == ".xstage":
+                xstage_files.append(scene)
+
+        # there must be at least one (but maybe not more?) xstage file
+        if not xstage_files:
+            self.log.error("No xstage files found in zip")
+            raise AssertionError("Invalid scene archive")
+
+        ideal_scene = False
+        # find the one with the same name as zip. In case there can be more
+        # then one xtage file.
+        for scene in xstage_files:
+            # if /foo/bar/baz.zip == /foo/bar/baz/baz.xstage
+            #             ^^^                     ^^^
+            if scene.stem == published_scene.stem:
+                xstage_path = scene
+                ideal_scene = True
+
+        # but sometimes xstage file has different name then zip - in that case
+        # use that one.
+        if not ideal_scene:
+            xstage_path = xstage_files[0]
+        return xstage_path
+
     def RenderArgument( self ):
         renderArguments = "-batch"
 
         if self.GetBooleanPluginInfoEntryWithDefault( "UsingResPreset", False ):
-            resName = self.GetPluginInfoEntryWithDefault( "ResolutionName", "HDTV_1080p24" )
+            resName = self.GetPluginInfoEntryWithDefault( "ResolutionName", "HDTV_1080p25" )
             if resName == "Custom":
-                renderArguments += " -res " + self.GetPluginInfoEntryWithDefault( "PresetName", "HDTV_1080p24" )
+                renderArguments += " -res " + self.GetPluginInfoEntryWithDefault( "PresetName", "HDTV_1080p25" )
             else:
                 renderArguments += " -res " + resName
         else:
@@ -89,7 +175,7 @@ class HarmonyOpenPypePlugin( DeadlinePlugin ):
         renderArguments += " -frames " + startFrame + " " + endFrame
 
         if not self.GetBooleanPluginInfoEntryWithDefault( "IsDatabase", False ):
-            sceneFilename = self.GetPluginInfoEntryWithDefault( "SceneFile", self.GetDataFilename() )
+            sceneFilename = str(self._unzip_scene_file(self.GetPluginInfoEntryWithDefault( "SceneFile", self.GetDataFilename())))
             sceneFilename = RepositoryUtils.CheckPathMapping( sceneFilename )
             renderArguments += " \"" + sceneFilename + "\""
         else:

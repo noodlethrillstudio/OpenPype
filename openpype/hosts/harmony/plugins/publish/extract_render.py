@@ -42,6 +42,8 @@ class ExtractRender(pyblish.api.InstancePlugin):
         func = """function %s(args)
         {
             node.setTextAttr(args[0], "DRAWING_NAME", 1, args[1]);
+            node.setTextAttr(args[0], "MOVIE_PATH", 1, args[1]);
+
         }
         %s
         """ % (sig, sig)
@@ -74,16 +76,26 @@ class ExtractRender(pyblish.api.InstancePlugin):
         # Collect rendered files.
         self.log.debug(f"collecting from: {path}")
         files = os.listdir(path)
+
+        if isinstance(files, str):
+            files = [files]
+
         assert files, (
             "No rendered files found, render failed."
         )
         self.log.debug(f"files there: {files}")
+
         collections, remainder = clique.assemble(files, minimum_items=1)
-        assert not remainder, (
-            "There should not be a remainder for {0}: {1}".format(
-                instance.data["setMembers"][0], remainder
-            )
+        if len(files) > 1:
+            assert not remainder, (
+                "There should not be a remainder for {0}: {1}".format(
+                    instance.data["setMembers"][0], remainder
+                )
         )
+        if len(files) == 1 and remainder:
+            collections.append(list(remainder))
+
+        #Okay dummy, this is checking the number of collections, not the length of the collection. OBVIOUSLY!!!
         self.log.debug(collections)
         if len(collections) > 1:
             for col in collections:
@@ -92,6 +104,7 @@ class ExtractRender(pyblish.api.InstancePlugin):
         else:
             collection = collections[0]
 
+        self.log.debug(f"collection: {collection}")
         # Generate thumbnail.
         thumbnail_path = os.path.join(path, "thumbnail.png")
         args = openpype.lib.get_ffmpeg_tool_args(
@@ -117,8 +130,21 @@ class ExtractRender(pyblish.api.InstancePlugin):
         self.log.debug(output.decode("utf-8", errors="backslashreplace"))
 
         # Generate representations.
-        extension = collection.tail[1:]
-        representation = {
+        if not hasattr (collection, "tail"):
+            self.log.debug("EXTRACT RENDER: collection is not a clique object ")
+            extension = "mov"
+            representation = {
+            "name": extension,
+            "ext": extension,
+            "files": str(files[0]),
+            "stagingDir": path,
+            "tags": ["review"],
+            "fps": frame_rate
+        }
+        else:
+            self.log.debug("EXTRACT RENDER: collection is a clique object collection")
+            extension = collection.tail[1:]
+            representation = {
             "name": extension,
             "ext": extension,
             "files": list(collection),
@@ -126,6 +152,8 @@ class ExtractRender(pyblish.api.InstancePlugin):
             "tags": ["review"],
             "fps": frame_rate
         }
+        for file in representation["files"]:
+            self.log.debug(f"{file}")
 
         thumbnail = {
             "name": "thumbnail",

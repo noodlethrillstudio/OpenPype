@@ -10,10 +10,11 @@ class TransferNotes(BaseAction):
 
 
     def discover(self, session, entities, event):
-
         """Return True when entities contains a single Task Object"""
         ''' Validation '''
         valid = True
+
+
 
         # Check for multiple selection.
         if len(entities) > 1:

@@ -42,7 +42,8 @@ class CollectFarmRender(publish.AbstractCollectRender):
                 "DPX3_16_INVERTED_CHANNELS"],
         "exr": ["EXR"],
         "pdf": ["PDF"],
-        "dtext": ["DTEX"]
+        "dtext": ["DTEX"],
+        "mov": ["com.toonboom.mp4.1.0"]
     }
 
     def get_expected_files(self, render_instance):
@@ -73,15 +74,27 @@ class CollectFarmRender(publish.AbstractCollectRender):
                 f"Cannot determine file extension for {info[1]}")
 
         path = Path(render_instance.source).parent
+        self.log.debug(f"path::{path}")
         # is sequence start node on write node offsetting whole sequence?
         expected_files = []
 
         # '-' in name is important for Harmony17
-        for frame in range(start, end + 1):
+        if ext != "mov":
+            self.log.debug("NOT A MOV __ subset::{}, ext::{}".format(render_instance.subset, ext))
+
+            for frame in range(start, end + 1):
+                expected_files.append(
+                    path / "{}-{}.{}".format(
+                        render_instance.subset,
+                        str(frame).rjust(int(info[2]) + 1, "0"),
+                        ext
+                    )
+                )
+        else:
+            self.log.debug("subset::{}, ext::{}".format(render_instance.subset, ext))
             expected_files.append(
-                path / "{}-{}.{}".format(
+                path / "{}.{}".format(
                     render_instance.subset,
-                    str(frame).rjust(int(info[2]) + 1, "0"),
                     ext
                 )
             )
@@ -135,6 +148,10 @@ class CollectFarmRender(publish.AbstractCollectRender):
             subset_name = subset_name.replace(
                 'Farm',
                 replace_str)
+            if info[1] == "com.toonboom.mp4.1.0":
+                output_type = "Movie"
+            else:
+                output_type = "Image"
 
             render_instance = HarmonyRenderInstance(
                 version=version,
@@ -170,7 +187,7 @@ class CollectFarmRender(publish.AbstractCollectRender):
                 handleStart=context.data["handleStart"],  # from DB
                 handleEnd=context.data["handleEnd"],      # from DB
                 frameStep=1,
-                outputType="Image",
+                outputType=output_type,
                 outputFormat=info[1],
                 outputStartFrame=info[3],
                 leadingZeros=info[2],

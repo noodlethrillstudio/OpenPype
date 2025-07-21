@@ -15,6 +15,8 @@ class createAnimationListReview(BaseAction):
     description = 'Create new list for animation review. Add animation shots if they exist, blocking shots if not, and animatic shots if blocking doesn\'t exist.'
 
     def discover(self, session, entities, event):
+
+
         if entities[0].entity_type  != 'Episode' or len(entities) != 1:
             return False
         return True

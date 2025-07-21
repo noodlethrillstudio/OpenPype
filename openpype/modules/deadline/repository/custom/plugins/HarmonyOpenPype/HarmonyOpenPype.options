@@ -98,7 +98,7 @@ CategoryOrder=1
 Index=2
 Description=The resolution preset to use.
 Required=true
-Default=HDTV_1080p24
+Default=HDTV_1080p25
 
 [PresetName]
 Type=string
