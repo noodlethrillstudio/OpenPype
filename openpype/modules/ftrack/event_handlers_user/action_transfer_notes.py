@@ -14,13 +14,7 @@ class TransferNotes(BaseAction):
         ''' Validation '''
         valid = True
 
-        user_name = event["source"]["user"]["username"]
 
-        user = session.query("User where username is '{}'".format(user_name)).one()
-        allowed_roles = ["Administrator", "Project Manager"]
-        user_roles = [role["role"]["name"] for role in user["user_security_roles"]]
-        if not any(role in allowed_roles for role in user_roles):
-            valid = False
 
         # Check for multiple selection.
         if len(entities) > 1:
