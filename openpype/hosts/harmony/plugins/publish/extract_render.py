@@ -152,7 +152,7 @@ class ExtractRender(pyblish.api.InstancePlugin):
             "tags": ["review"],
             "fps": frame_rate
         }
-        for file in representation["files"]:
+        for file in list(representation["files"]):
             self.log.debug(f"{file}")
 
         thumbnail = {

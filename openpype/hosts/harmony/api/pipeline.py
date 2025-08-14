@@ -265,7 +265,6 @@ def inject_sun_and_moon_js():
     add_scripts_to_library(sun_and_moon_script_path, sun_and_moon_avalon_folder)
 
     register_plugins = sun_and_moon_avalon_folder / "registerShortcuts.js"
-
     script = register_plugins.read_text()
     harmony.send({"script": script})
 
@@ -286,7 +285,7 @@ def check_render_node_context():
     outofdateinstances = []
 
     for instance in instances:
-        if task_name.lower() not in instance['subset'].lower() and "template" not in instance['subset'].lower():
+        if task_name.lower() not in instance['subset'].lower() and "template" not in instance['subset'].lower() and "renderfarm" not in instance['subset'].lower():
             outofdateinstances.append(instance['subset'])
     if outofdateinstances:
         instancestr = ", ".join(outofdateinstances)
