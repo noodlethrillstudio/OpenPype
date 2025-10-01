@@ -8,6 +8,7 @@ HOST_WORKFILE_EXTENSIONS = {
     "tvpaint": [".tvpp"],
     "fusion": [".comp"],
     "harmony": [".zip"],
+    "storyboardpro": [".sbpz"],
     "houdini": [".hip", ".hiplc", ".hipnc"],
     "maya": [".ma", ".mb"],
     "nuke": [".nk"],

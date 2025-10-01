@@ -132,6 +132,10 @@
                 },
                 {
                     "type": "schema",
+                    "name": "schema_project_storyboardpro"
+                },
+                {
+                    "type": "schema",
                     "name": "schema_project_tvpaint"
                 },
                 {

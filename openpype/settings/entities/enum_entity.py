@@ -161,6 +161,7 @@ class HostsEnumEntity(BaseEnumEntity):
         "flame",
         "fusion",
         "harmony",
+        "storyboardpro",
         "hiero",
         "houdini",
         "maya",

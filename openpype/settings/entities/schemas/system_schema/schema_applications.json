@@ -83,6 +83,10 @@
     },
     {
       "type": "schema",
+      "name": "schema_storyboardpro"
+    },
+    {
+      "type": "schema",
       "name": "schema_tvpaint"
     },
     {

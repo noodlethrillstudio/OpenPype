@@ -20,7 +20,7 @@ class TransferNotes(BaseAction):
         if len(entities) > 1:
             valid = False
         # Check for valid entities.
-        valid_entity_types = ['task']
+        valid_entity_types = ['task','shot']
         for entity in entities:
             if entity.entity_type.lower() not in valid_entity_types:
                 valid = False
@@ -36,23 +36,29 @@ class TransferNotes(BaseAction):
         creates ftrack "["data"]["values"], which need to be fetched using .get()
         # '''
         self.log.info('{0}'.format(entities[0]['id']))
+        shot = None
+        task = None
 
         if not event['data'].get('values', {}):
 
             try:
-
-                task_id = entities[0]['id']
-                task = self.session.query('Task where id is "{0}"'.format(task_id)).one()
-                self.log.info(f'interface task query succesful: {task}')
+                if entities[0].entity_type.lower() == 'task':
+                    task_id = entities[0]['id']
+                    task = self.session.query('Task where id is "{0}"'.format(task_id)).one()
+                    self.log.info(f'interface task query succesful: {task}')
+                elif entities[0].entity_type.lower() == 'shot':
+                    shot_id = entities[0]['id']
+                    shot = self.session.query('Shot where id is "{0}"'.format(shot_id)).one()
+                    self.log.info(f'interface task query succesful: {shot}')
             except Exception as e:
-                self.log.error(f'Error during interface task session query: {e}')
+                return self.log.error(f'Error during interface task session query: {e}')
 
 
             try:
-                other_tasks = self.get_other_tasks(task)
+                other_tasks = self.get_other_tasks(task, shot)
                 self.log.info('other task get successful')
             except Exception as e:
-                self.log.error(f'Error during get_other_tasks interface: {e}')
+                return self.log.error(f'Error during get_other_tasks interface: {e}')
 
             task_names = []
             for task in other_tasks:
@@ -96,62 +102,88 @@ class TransferNotes(BaseAction):
             '''
             if 'values' not in event['data']:
                 return
+            task_id = None
+            shot_id = None
+            if entities[0].entity_type.lower() == "task":
+                entity_id = entities[0]['id']
+                values = event['data'].get('values',{})
+                task = self.session.query('Task where id is "{0}"'.format(entity_id)).one()
+                task_id = task['id']
 
-            entity_id = entities[0]['id']
-            values = event['data'].get('values',{})
-            task = self.session.query('Task where id is "{0}"'.format(entity_id)).one()
-            task_id = task['id']
+            elif entities[0].entity_type.lower() == "shot":
+                entity_id = entities[0]['id']
+                values = event['data'].get('values',{})
+                shot = self.session.query('Shot where id is "{0}"'.format(entity_id)).one()
+                shot_id = shot['id']
 
-            notes = self.get_notes(task_id, values)
+            notes = self.get_notes(task_id, shot_id, values)
 
             des_task = self.session.query('Task where id is {0}'.format(values['destination_task'])).one()
 
             self.transfer_notes( notes, des_task)
-
+            target = None
+            if shot:
+                target = shot
+            elif task:
+                target = task
             session.commit()
 
 
             return  {
             'success': True,
-            'message': 'Transferred notes from {0} to {1} succesfully'.format(task['name'], des_task['name'])
+            'message': 'Transferred notes from {0} to {1} succesfully'.format(target['name'], des_task['name'])
                     }
 
 
-    def get_other_tasks(self, task):
-
-        other_tasks = self.session.query(
-            'Task where parent_id is "{0}" and''(id != "{1}")'.format(task['parent_id'],task['id'])
-             )
+    def get_other_tasks(self, task, shot):
+        if task:
+            other_tasks = self.session.query(
+                'Task where parent_id is "{0}" and''(id != "{1}")'.format(task['parent_id'],task['id'])
+                )
+        elif shot:
+            other_tasks = self.session.query(
+                'Task where parent_id is "{0}"'.format(shot['id'])
+                )
 
         return other_tasks
 
 
 
-    def get_notes(self, task_id, values):
+    def get_notes(self, task_id, shot_id, values):
         """Returns an array of all the notes attached to the chosen task"""
         uncompleted_only = values['checkbox']
-        versions = self.session.query('AssetVersion where task.id is "{0}"'.format(task_id))
+        if task_id:
+            versions = self.session.query('AssetVersion where task.id is "{0}"'.format(task_id))
 
-        notes_to_add = []
+            notes_to_add = []
 
-        if uncompleted_only == True:
-            task_notes = self.session.query('Note where parent_id is "{0}" and completed_at is None'.format(task_id)).all()
-        elif uncompleted_only == False:
-            task_notes = self.session.query('Note where parent_id is "{0}"'.format(task_id)).all()
-
-        for task_note in task_notes:
-            notes_to_add.append(task_note)
-
-
-        for version in versions:
             if uncompleted_only == True:
-                notes = self.session.query('Note where parent_id is "{0}" and completed_at is None '.format(version['id'])).all()
-                for note in notes:
-                    notes_to_add.append(note)
+                task_notes = self.session.query('Note where parent_id is "{0}" and completed_at is None'.format(task_id)).all()
             elif uncompleted_only == False:
-                notes = self.session.query('Note where parent_id is "{0}"'.format(version['id'])).all()
-                for note in notes:
-                    notes_to_add.append(note)
+                task_notes = self.session.query('Note where parent_id is "{0}"'.format(task_id)).all()
+
+            for task_note in task_notes:
+                notes_to_add.append(task_note)
+
+
+            for version in versions:
+                if uncompleted_only == True:
+                    notes = self.session.query('Note where parent_id is "{0}" and completed_at is None '.format(version['id'])).all()
+                    for note in notes:
+                        notes_to_add.append(note)
+                elif uncompleted_only == False:
+                    notes = self.session.query('Note where parent_id is "{0}"'.format(version['id'])).all()
+                    for note in notes:
+                        notes_to_add.append(note)
+        elif shot_id:
+            notes_to_add = []
+            if uncompleted_only == True:
+                task_notes = self.session.query('Note where parent_id is "{0}" and completed_at is None'.format(shot_id)).all()
+            elif uncompleted_only == False:
+                task_notes = self.session.query('Note where parent_id is "{0}"'.format(shot_id)).all()
+
+            for task_note in task_notes:
+                notes_to_add.append(task_note)
 
         return notes_to_add
 

@@ -1265,6 +1265,32 @@
             }
         }
     },
+    "storyboardpro": {
+        "enabled": true,
+        "label": "Storyboard Pro",
+        "icon": "{}/app_icons/storyboardpro.png",
+        "host_name": "storyboardpro",
+        "environment": {
+        },
+        "variants": {
+            "2025": {
+                "executables": {
+                    "windows": [
+                        "c:\\Program Files (x86)\\Toon Boom Animation\\Toon Boom Storyboard Pro 25\\win64\\bin\\StoryboardPro.exe"
+                    ],
+                    "darwin": [
+                        "/Applications/Toon Boom Storyboard Pro 25/Storyboard Pro.app/Contents/MacOS/Storyboard Pro"
+                    ],
+                    "linux": []
+                },
+                "arguments": {
+                    "windows": [],
+                    "darwin": [],
+                    "linux": []
+                },
+                "environment": {}
+            }}},
+
     "harmony": {
         "enabled": true,
         "label": "Harmony",

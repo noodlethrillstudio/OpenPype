@@ -87,6 +87,8 @@ def main(argv):
         from openpype.hosts.aftereffects.api.launch_logic import main
     elif host_name == "harmony":
         from openpype.hosts.harmony.api.lib import main
+    elif host_name == "storyboardpro":
+        from openpype.hosts.storyboardpro.api.lib import main
     else:
         title = "Unknown host name"
         message = (

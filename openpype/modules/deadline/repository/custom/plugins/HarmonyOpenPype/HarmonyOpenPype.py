@@ -95,15 +95,17 @@ class HarmonyOpenPypePlugin( DeadlinePlugin ):
         Returns:
             Path: The path to unzipped xstage.
         """
+        published_scene = RepositoryUtils.CheckPathMapping( published_scene )
         self.LogInfo(f"published_scene::{published_scene}")
         # if not zip, bail out.
         published_scene = Path1(published_scene)
         if "zip" not in published_scene.suffix or not is_zipfile(
             published_scene.as_posix()
         ):
-            self.log.error("Published scene is not in zip.")
-            self.log.error(published_scene)
+            self.LogInfo("Published scene is not in zip.")
+            self.LogInfo(published_scene)
             raise AssertionError("invalid scene format")
+
 
         xstage_path = (
             published_scene.parent
@@ -200,6 +202,9 @@ class HarmonyOpenPypePlugin( DeadlinePlugin ):
             nodeType = self.GetPluginInfoEntryWithDefault( "Output" + str( rendernodeNum ) + "Type", "Image" )
             if nodeType == "Image":
                 nodePath = self.GetPluginInfoEntryWithDefault( "Output" + str( rendernodeNum ) + "Path", "" )
+                nodePath = RepositoryUtils.CheckPathMapping(nodePath)
+                self.LogInfo(f"Node_Path::{nodePath}")
+
                 nodeLeadingZero = self.GetPluginInfoEntryWithDefault( "Output" + str( rendernodeNum ) + "LeadingZero", "" )
                 nodeFormat = self.GetPluginInfoEntryWithDefault( "Output" + str( rendernodeNum ) + "Format", "" )
                 nodeStartFrame = self.GetPluginInfoEntryWithDefault( "Output" + str( rendernodeNum ) + "StartFrame", "" )
@@ -218,6 +223,9 @@ class HarmonyOpenPypePlugin( DeadlinePlugin ):
 
             if nodeType == "Movie":
                 nodePath = self.GetPluginInfoEntryWithDefault( "Output" + str( rendernodeNum ) + "Path", "" )
+                nodePath = RepositoryUtils.CheckPathMapping(nodePath)
+                self.LogInfo(f"Node_Path::{nodePath}")
+
                 if not nodePath == "":
                     scriptBuilder.AppendLine("node.setTextAttr( \"" + nodeName + "\", \"moviePath\", 1, \"" + nodePath + "\" );")
 

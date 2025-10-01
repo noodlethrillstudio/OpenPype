@@ -11,7 +11,7 @@ class Creator(LegacyCreator):
     created node.
     """
 
-    defaults = ["Main"]
+    defaults = ["Main", "TextlessRender"]
     node_type = "COMPOSITE"
 
     def setup_node(self, node):
