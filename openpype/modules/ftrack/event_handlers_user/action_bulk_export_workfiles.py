@@ -1,30 +1,30 @@
 import os
 
 from openpype.client import get_project
-from openpype_modules.ftrack.lib import BaseAction
+from openpype_modules.ftrack.lib import BaseAction, statics_icon
 from openpype.lib.applications import (
-    ApplicationManager,
     ApplicationLaunchFailed,
     ApplictionExecutableNotFound,
     CUSTOM_LAUNCH_APP_GROUPS
 )
+from openpype.addons.sun_and_moon.bulk_open_change_publish.lib import (BulkApplicationManager)
+from openpype.hosts.harmony.api.lib import launch_zip_file
 
-
-class BulkAction(BaseAction):
-    """Applications Action class."""
+class BulkApplicationsAction(BaseAction):
+    """Bulk Applications Action class."""
 
     type = "Application"
-    label = "Bulk action"
+    label = "Bulk Applications Action"
 
     identifier = "openpype_app"
     _launch_identifier_with_id = None
 
-    icon_url = os.environ.get("OPENPYPE_STATICS_SERVER")
+    icon_url = statics_icon("ftrack", "action_icons", "CreateFolders.svg")
 
     def __init__(self, *args, **kwargs):
-        super(AppplicationsAction, self).__init__(*args, **kwargs)
+        super(BulkApplicationsAction, self).__init__(*args, **kwargs)
 
-        self.application_manager = ApplicationManager()
+        self.bulk_application_manager = BulkApplicationManager()
 
     @property
     def discover_identifier(self):
@@ -81,7 +81,6 @@ class BulkAction(BaseAction):
     def _discover(self, event, user):
         entities = self._translate_event(event)
         items = self.discover(self.session, entities, event)
-        if user[""]
         if items:
             return {"items": items}
 
@@ -213,7 +212,7 @@ class BulkAction(BaseAction):
             "Ftrack launch app: \"{}\" on Project/Asset/Task: {}/{}/{}"
         ).format(app_name, project_name, asset_name, task_name))
         try:
-            self.application_manager.launch(
+            self.bulk_application_manager.launch(
                 app_name,
                 project_name=project_name,
                 asset_name=asset_name,
@@ -244,12 +243,15 @@ class BulkAction(BaseAction):
                 "message": msg
             }
 
+        launch_zip_file("C:/SynologyDrive/Duck_and_Frog/shots/ep0000_TEST/ep0000_TEST_sc01/test/work/Animation/DAF_test_Animation_v037.zip")
+
         return {
             "success": True,
             "message": "Launching {0}".format(self.label)
         }
 
 
+
 def register(session):
     """Register action. Called when used as an event plugin."""
-    AppplicationsAction(session).register()
+    BulkApplicationsAction(session).register()
