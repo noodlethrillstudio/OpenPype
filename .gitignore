@@ -117,5 +117,4 @@ tools/dev_*
 
 # Addons
 ########
-/openpype/addons/*
 !/openpype/addons/README.md
