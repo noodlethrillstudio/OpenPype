@@ -146,6 +146,8 @@ class addNotesFromCsv(BaseAction):
                 notes = notes + "<br><br>" + suffix
 
             new_note = task.create_note(notes, user)
+            new_note["is_todo"] = True
+            session.commit()
 
             print(task["name"] +" " +parent_name)
             print("notes: " +notes)
@@ -154,8 +156,6 @@ class addNotesFromCsv(BaseAction):
                 'success': True,
                 'message': f"Adding notes to FTrack: {parent_name} -> {notes}"
                         }
-            print("note with content already exist, skipping")
-
 
     def parse_csv(self,csv_data, type_selection, prefix, suffix, project_name, user, event, session):
         """Parses CSV text and processes each row."""

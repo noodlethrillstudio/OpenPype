@@ -199,10 +199,20 @@ def launch(application_path, *args):
     if not os.environ.get("AVALON_HARMONY_WORKFILES_ON_LAUNCH", False):
         open_empty_workfile()
         return
+    print(f"DEBUG: args == {args}")
 
-    ProcessContext.workfile_tool = host_tools.get_tool_by_name("workfiles")
-    host_tools.show_workfiles(save=False)
-    ProcessContext.execute_in_main_thread(check_workfiles_tool)
+    if "-compile" in args or "-batch" in args:
+        log.info(f"launch args: {args}")
+        launch_zip_file(args[0], args)
+        #show_and_publish("publish")
+        return
+    if "publish" in args:
+        launch_zip_file(args[0])
+        show_and_publish("publish")
+    else:
+        ProcessContext.workfile_tool = host_tools.get_tool_by_name("workfiles")
+        host_tools.show_workfiles(save=False)
+        ProcessContext.execute_in_main_thread(check_workfiles_tool)
 
 
 def check_workfiles_tool():
@@ -233,7 +243,7 @@ def get_local_harmony_path(filepath):
     return os.path.join(harmony_path, basename)
 
 
-def launch_zip_file(filepath):
+def launch_zip_file(filepath, *action_args):
     """Launch a Harmony application instance with the provided zip file.
 
     Args:
@@ -325,13 +335,55 @@ def launch_zip_file(filepath):
 
     print("Launching {}".format(scene_path))
     kwargs = get_non_python_host_kwargs({}, False)
-    process = subprocess.Popen(
-        [ProcessContext.application_path, scene_path],
-        **kwargs
-    )
-    ProcessContext.pid = process.pid
-    ProcessContext.process = process
-    ProcessContext.stdout_broker.host_connected()
+    log.info(f"launching with kwargs: {kwargs}")
+    app_args = []
+    if action_args:
+        log.info(f"action_args: {action_args}")
+        if '-compile' in action_args[0]:
+            log.debug(f"Found -compile")
+            compile_index = action_args[0].index('-compile')
+            script_path_value = action_args[0][compile_index + 1]
+            app_args += ['-compile', script_path_value]
+            log.debug(f"Launching COMPILE with app_args: {app_args}")
+
+            process = subprocess.Popen(
+            [ProcessContext.application_path, scene_path] + app_args,
+            **kwargs)
+            ProcessContext.pid = process.pid
+            ProcessContext.process = process
+            ProcessContext.stdout_broker.host_connected()
+
+        elif "-batch" in action_args[0]:
+            log.debug(f"Found -batch")
+            app_args += ['-batch']
+            log.debug(f"Launching BATCH with app_args: {app_args}")
+            process = subprocess.Popen(
+            [ProcessContext.application_path, scene_path] + app_args,
+            **kwargs)
+            ProcessContext.pid = process.pid
+            ProcessContext.process = process
+            ProcessContext.stdout_broker.host_connected()
+
+        elif "-publish" in action_args[0]:
+            log.debug("Found -publish")
+            process = subprocess.Popen(
+                [ProcessContext.application_path, scene_path],
+                **kwargs
+            )
+
+            ProcessContext.pid = process.pid
+            ProcessContext.process = process
+            ProcessContext.stdout_broker.host_connected()
+    else:
+        log.debug("No flags, launching normally")
+        process = subprocess.Popen(
+            [ProcessContext.application_path, scene_path],
+            **kwargs
+        )
+
+        ProcessContext.pid = process.pid
+        ProcessContext.process = process
+        ProcessContext.stdout_broker.host_connected()
 
 
 def on_file_changed(path, threaded=True):
@@ -395,7 +447,20 @@ def show(tool_name):
 
     # Required return statement.
     return "nothing"
+def prepare_nodes():
+    pass
 
+def show_and_publish(tool_name):
+    time.sleep(1)
+
+    kwargs = {}
+    kwargs["autopublish"] = True
+
+    ProcessContext.execute_in_main_thread(
+        lambda: host_tools.show_tool_by_name(tool_name, **kwargs)
+    )
+    # Required return statement.
+    return "nothing"
 
 def get_scene_data():
     try:

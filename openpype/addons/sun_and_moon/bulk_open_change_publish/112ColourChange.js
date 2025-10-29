@@ -1,6 +1,4 @@
-var sceneName = scene.currentScene();
-var message = "The file \"" + sceneName + "\" exists."
-MessageBox.information(message);
+
 
 function getPalette(paletteName)
 {
@@ -15,8 +13,8 @@ function getPalette(paletteName)
     }
 }
 
-function getColor(palette, colorName){
-    return palette.getColorById("0c8daca61701357c");
+function getColor(palette, id, name){
+    return palette.getColorById(id);
     // palette.setCurrentPaletteById(palette.id);
     // for(var i=0; i < palette.nColors; ++i)
     //     var color = palette.getColorByIndex(i);
@@ -24,15 +22,14 @@ function getColor(palette, colorName){
     //         return color;
 }
 
-function changeColor(red, green, blue, alpha){
-    var palette = getPalette("ch_0_Duck");
-    MessageBox.information("Palette found: " + palette.getName());
-    var color = getColor(palette, "DUK_BodyFl");
+function changeColor(colour,red, green, blue, alpha ){
+    var palette = getPalette("pr_cafe_bin");
+    var color = getColor(palette, colour, "DUK_BodyFl");
     color.setColorData({r : red, g : green, b: blue, a : alpha});
 }
 
-changeColor(180, 239, 80, 180);
-
-
-
-MessageBox.information("Color changed.");
+var CFB_WheelieBinGL = changeColor( 59,  61,  52, 255, "0cbf3404b85024f7");
+var CFB_WheelieBinDarkerGL = changeColor(  0,   0,   0, 255, "0cbf3404b8502fd2");
+var CFB_WheelieBinFL = changeColor(113, 117, 101, 255, "0cbf3404b8502535");
+var CFB_WheelieBinSplatFL = changeColor( 82,  87,  64, 255, "0cbf3404b8502601");
+var CFB_WheelieBinSH = changeColor( 85,  88,  77, 255, "0cbf3404b8502568");

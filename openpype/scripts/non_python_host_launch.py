@@ -7,6 +7,9 @@ workfile or others.
 
 import os
 import sys
+import logging
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 # Get current file to locate start point of sys.argv
 CURRENT_FILE = os.path.abspath(__file__)
@@ -60,6 +63,8 @@ def on_invalid_args(script_not_found):
 
 
 def main(argv):
+
+    log.info(f"non_python_host_launch args:: {argv}")
     # Modify current file path to find match in sys.argv which may be different
     #   on windows (different letter cases and slashes).
     modified_current_file = CURRENT_FILE.replace("\\", "/").lower()

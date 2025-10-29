@@ -144,6 +144,9 @@ class Controller(QtCore.QObject):
     # When instance is toggled
     instance_toggled = QtCore.Signal(object, object, object)
 
+    #When collection is done
+    collected = QtCore.Signal()
+
     def __init__(self, parent=None):
         super(Controller, self).__init__(parent)
         self.context = None
@@ -314,6 +317,14 @@ class Controller(QtCore.QObject):
             "Published" if not self.errored else "Published, with errors"
         )
         self.was_finished.emit()
+        self._main_thread_processor.stop()
+
+    def on_collected(self):
+        if self.is_running:
+            self.is_running = False
+        self.log.debug(":::Collection complete")
+
+        QtCore.QTimer.singleShot(10000, self.collected.emit)
         self._main_thread_processor.stop()
 
     def stop(self):
@@ -496,7 +507,16 @@ class Controller(QtCore.QObject):
                 if isinstance(self.current_pair, IterationBreak):
                     raise self.current_pair
 
-            except IterationBreak:
+            except IterationBreak as e:
+                if e.args[0] == "Collected":
+                    self.log.debug("Collection was done")
+                    if not on_finished is None:
+                        self._main_thread_processor.add_item(
+                            MainThreadItem(on_finished)
+                        )
+                    self._main_thread_processor.stop_if_empty()
+                    return
+
                 self.log.debug("Iteration break was raised")
                 self.is_running = False
                 self.was_stopped.emit()
@@ -600,7 +620,7 @@ class Controller(QtCore.QObject):
         self._main_thread_processor.start()
 
     def _start_collect(self):
-        self.iterate_and_process()
+        self.iterate_and_process(self.on_collected)
 
     def _start_validate(self):
         self.processing["stop_on_validation"] = True

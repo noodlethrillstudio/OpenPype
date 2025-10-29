@@ -5,6 +5,7 @@ import sys
 import ctypes
 import platform
 import contextlib
+import time
 
 from qtpy import QtCore, QtGui, QtWidgets
 
@@ -106,5 +107,43 @@ def show(parent=None):
 
         self._window.reset()
         self._window.resize(*settings.WindowSize)
+
+        return self._window
+
+def show_and_publish(self, parent=None):
+    with open(util.get_asset("app.css")) as f:
+        css = f.read()
+
+        # Make relative paths absolute
+        root = util.get_asset("").replace("\\", "/")
+        css = css.replace("url(\"", "url(\"%s" % root)
+
+    with application() as app:
+
+        if platform.system().lower() == "windows":
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                u"pyblish_pype"
+            )
+
+        install_fonts()
+        install_translator(app)
+
+        if self._window is None:
+            ctrl = control.Controller()
+            self._window = window.Window(ctrl, parent)
+            self._window.destroyed.connect(on_destroyed)
+
+        self._window.show()
+        self._window.activateWindow()
+        self._window.setWindowTitle(settings.WindowTitle)
+
+        font = QtGui.QFont("Open Sans", 8, QtGui.QFont.Normal)
+        self._window.setFont(font)
+        self._window.setStyleSheet(css)
+
+        self._window.reset()
+        self._window.resize(*settings.WindowSize)
+
+        self._window.controller.collected.connect(self._window.show_and_publish)
 
         return self._window

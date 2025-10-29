@@ -232,18 +232,34 @@ class HostToolsHelper:
             library_loader_tool.showNormal()
             library_loader_tool.refresh()
 
-    def show_publish(self, parent=None):
+
+    def harmony_auto_publish(self, parent=None):
+        print("DEBUG::: Autopublish called")
+        pyblish_show_publish = self._discover_pyblish_gui()
+        window = pyblish_show_publish(parent)
+
+        window.controller.collected.connect(window.on_play_clicked)
+        return pyblish_show_publish
+
+    def show_publish(self, parent=None, **kwargs):
         """Try showing the most desirable publish GUI
 
         This function cycles through the currently registered
         graphical user interfaces, if any, and presents it to
         the user.
         """
+        print(f"DEBUG::: Kwargs{kwargs}")
+        if "autopublish" in kwargs:
+            print("autopublish found in kwargs")
+            pyblish_show = self.harmony_auto_publish(parent)
 
-        pyblish_show = self._discover_pyblish_gui()
+
+        else:
+            pyblish_show = self._discover_pyblish_gui(**kwargs)
+
         return pyblish_show(parent)
 
-    def _discover_pyblish_gui(self):
+    def _discover_pyblish_gui(self, **kwargs):
         """Return the most desirable of the currently registered GUIs"""
         # Prefer last registered
         guis = list(reversed(pyblish.api.registered_guis()))

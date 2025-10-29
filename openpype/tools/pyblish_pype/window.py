@@ -1189,6 +1189,12 @@ class Window(QtWidgets.QDialog):
 
         self._update_state()
 
+    def show_and_publish(self):
+        self.info(self.tr("Preparing auto publish.."))
+        self._add_intent_to_context()
+
+        self.publish()
+
     def act(self, plugin_item, action):
         self.info("%s %s.." % (self.tr("Preparing"), action))
 
